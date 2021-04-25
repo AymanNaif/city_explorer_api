@@ -17,16 +17,39 @@ server.get('/location', (req, res) => {
   let locationRes = new Location(locationData);
 
   res.send(locationRes);
-  res.send('hello');
 
 })
 
 function Location(locationName) {
-  this.display_name = locationName[0].display_name;
-  this.lat = locationName[0].lat;
-  this.lon = locationName[0].lon;
+  this.search_query= 'Lynnwood',
+  this.formatted_query = locationName[0].display_name;
+  this.latitude = locationName[0].lat;
+  this.longitude = locationName[0].lon;
 }
 
 server.listen(PORT, () => {
   console.log('listing to the Port number: ' + PORT);
 });
+
+
+
+function Weather(weatherName) {
+  this.forecast = weatherName.weather.description;
+  this.time = weatherName.valid_date;
+}
+
+
+
+server.get('/weather', (req, res) => {
+  let weatherArr = [];
+  let weatherData = require('./data/weather.json');
+  weatherData.data.forEach((item) => {
+    let weathers = new Weather(item);
+    weatherArr.push(weathers)
+  })
+  res.status(200).send(weatherArr);
+});
+
+server.get('*', (req, res) => {
+  res.status(500).send('Sorry, something went wrong');
+})
