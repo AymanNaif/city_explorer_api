@@ -9,8 +9,6 @@ const server = express();
 const PORT = process.env.PORT || 3050;
 server.use(cors());
 
-server.use(express.static('./public'));
-
 
 server.get('/location', (req, res) => {
   let locationData = require('./data/location.json');
@@ -47,6 +45,7 @@ server.get('/weather', (req, res) => {
     let weathers = new Weather(item);
     weatherArr.push(weathers)
   })
+
   res.status(200).send(weatherArr);
 });
 
