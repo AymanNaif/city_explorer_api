@@ -51,7 +51,7 @@ function Location(cityName, locData) {
 function Weather(weathData) {
 
   this.forecast = weathData.weather.description;
-  this.time = weathData.valid_date;
+  this.time = new Date(weathData.valid_date).toDateString();
 }
 
 
@@ -59,11 +59,10 @@ function Weather(weathData) {
 server.get('/weather', weatherHandler);
 
 function weatherHandler(req, res) {
-  let cityName = req.query.city;
+  let cityName = req.query.search_query;
 
   let key = process.env.WAEATHER_KEY;
-  let weatherURL = `https://api.weatherbit.io/v2.0/forecast/daily?city=${cityName}&key=${key}`
-  ;
+  let weatherURL = `https://api.weatherbit.io/v2.0/forecast/daily?city=${cityName}&key=${key}`;
 
   superagent.get(weatherURL) //send a request locatioIQ API
     .then((geoData) => {
@@ -93,14 +92,13 @@ function Parks(parkData) {
 }
 
 function parkHandler(req, res) {
-  let cityName = req.query.search_query;
+  let cityName = req.query.q;
 
   let key = process.env.PARKS_API_KEY;
 
 
 
-  let parkURL = `https://developer.nps.gov/api/v1/parks?parkCode=${cityName}&api_key=${key}`;
-
+  let parkURL = `https://developer.nps.gov/api/v1/parks?q=${cityName}&api_key=${key}`;
 
   superagent.get(parkURL) //send a request locatioIQ API
     .then((parksData) => {
