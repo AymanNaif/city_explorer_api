@@ -76,12 +76,12 @@ function weatherHandler(req, res) {
 
       res.status(200).send(weatherArr.slice(0,8));
 
-    })
 
-    .catch(error => {
-      console.log(error);
-      res.send(error);
-    });
+function Weather(weatherName) {
+  this.forecast = weatherName.weather.description;
+  this.time = new Date (weatherName.valid_date).toDateString()
+  ;
+
 }
 //  Parks Data ................
 
