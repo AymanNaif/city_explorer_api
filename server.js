@@ -33,7 +33,8 @@ server.listen(PORT, () => {
 
 function Weather(weatherName) {
   this.forecast = weatherName.weather.description;
-  this.time = weatherName.valid_date;
+  this.time = new Date (weatherName.valid_date).toDateString()
+  ;
 }
 
 
