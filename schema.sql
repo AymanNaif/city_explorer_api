@@ -1,6 +1,10 @@
-DROP TABLE IF EXISTS people;
+DROP TABLE IF EXISTS locations;
 
-CREATE TABLE IF NOT EXISTS people (
-    first_name VARCHAR(255),
-    last_name VARCHAR(255)
+DROP TABLE IF EXISTS locations;
+
+  CREATE TABLE IF NOT EXISTS locations (
+    search_query VARCHAR(255),
+    formatted_query VARCHAR(255),
+    latitude NUMERIC(10, 7),
+    longitude NUMERIC(10, 7)
 );

@@ -1,69 +1,85 @@
 'use strict';
-
-//Application dependencies
 const express = require('express');
-// Load Environment Variables from the .env file
+
 require('dotenv').config();
 const cors = require('cors');
+
+const server = express();
+const superagent = require('superagent');
 const pg = require('pg');
 
-
-//Application setupppp
-const app = express();
-app.use(cors());
-const PORT = process.env.PORT || 8000;
-
-const client = new pg.Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-
-
-// ROUTES
-app.get('/test', testHandler);
-app.get('/add', addDataHandler);
-app.get('/people',getDataHandler);
-app.get('*', notFoundHandler); //Error Handler
-
-// Routes Handlers
-function testHandler(request, response) {
-  response.status(200).send('ok');
+let client;
+let DATABASE_URL = process.env.DATABASE_URL;
+let ENV =  process.env.ENV||'';
+if (ENV === 'DEV') {
+  client = new pg.Client({
+    connectionString: DATABASE_URL
+  });
+} else {
+  client = new pg.Client({
+    connectionString: DATABASE_URL,
+    ssl: {}
+  });
 }
 
-function notFoundHandler(request, response) {
-  response.status(404).send('not found !!');
-}
+const PORT = process.env.PORT || 3050;
+server.use(cors());
 
-//localhost:3010/add?first_name=roaa&last_name=AbuAleeqa
-function addDataHandler(req,res){
-  console.log(req.query);
-  let firstName = req.query.first_name;
-  let lastName = req.query.last_name;
-  //safe values
-  let SQL = `INSERT INTO people (first_name,last_name) VALUES ($1,$2) RETURNING *;`;
-  let safeValues = [firstName,lastName];
-  client.query(SQL,safeValues)
-    .then(result=>{
+server.get('/location', locationHandelr);
+
+
+server.get('*', generalHandler);
+
+//  Location Data ................
+function locationHandelr(req, res) {
+  let cityName = req.query.city;
+  let key = process.env.LOCATION_KEY;
+  let locURL = `https://us1.locationiq.com/v1/search.php?key=${key}&q=${cityName}&format=json`;
+  let safeValues = [cityName];
+  let SQL = `SELECT DISTINCT search_query,formatted_query,latitude,longitude FROM locations WHERE search_query=$1;`;
+  client.query(SQL, safeValues)
+    .then(result => {
       res.send(result.rows);
     })
-    .catch(error=>{
+    .catch(error => {
       res.send(error);
-    })
+    });
+  superagent.get(locURL)
+    .then(geoData => {
+      let gData = geoData.body;
+      let locationData = new Location(cityName, gData);
+      let safeValues = [locationData.search_query, locationData.formatted_query, locationData.latitude, locationData.longitude];
+      let SQL = `INSERT INTO locations (search_query,formatted_query,latitude,longitude) VALUES ($1, $2, $3, $4) RETURNING *;`;
+      client.query(SQL, safeValues)
+        .then(result => {
+          res.send(result);
+        })
+        .catch(error => {
+          res.send(error);
+        });
+    });
+}
+function Location(cityName, locData) {
+  this.search_query = cityName;
+  this.formatted_query = locData[0].display_name;
+  this.latitude = locData[0].lat;
+  this.longitude = locData[0].lon;
 }
 
-//localhost:3010/people
-function getDataHandler(req,res){
-  let SQL = `SELECT * FROM people;`;
-  client.query(SQL)
-    .then(result=>{
-      res.send(result.rows);
-    })
-    .catch(error=>{
-      res.send(error);
-    })
+//  general pages ................
+
+function generalHandler(req, res) {
+  let errorPage = {
+    status: 500,
+    resText: 'sorry! you can not access this page',
+  };
+  res.status(500).send(errorPage);
 }
 
 client.connect()
   .then(() => {
-    app.listen(PORT, () =>
-      console.log(`listening on ${PORT}`)
-    );
+    server.listen(PORT, () => {
+      console.log(`listening on port ${PORT}`);
+    });
 
-  })
+  });
