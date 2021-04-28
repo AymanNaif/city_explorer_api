@@ -66,6 +66,80 @@ function Location(cityName, locData) {
   this.longitude = locData[0].lon;
 }
 
+
+
+//  weather Data ................
+function Weather(weathData) {
+
+  this.forecast = weathData.weather.description;
+  this.time = new Date(weathData.valid_date).toDateString();
+}
+
+
+
+server.get('/weather', weatherHandler);
+
+function weatherHandler(req, res) {
+  let cityName = req.query.search_query;
+
+  let key = process.env.WAEATHER_KEY;
+  let weatherURL = `https://api.weatherbit.io/v2.0/forecast/daily?city=${cityName}&key=${key}`;
+
+  superagent.get(weatherURL) //send a request locatioIQ API
+    .then((geoData) => {
+      let gData = geoData.body;
+
+
+
+      let weatherArr = gData.data.map((item) => new Weather(item));
+
+
+      res.status(200).send(weatherArr.slice(0,8));
+
+
+function Weather(weatherName) {
+  this.forecast = weatherName.weather.description;
+  this.time = new Date (weatherName.valid_date).toDateString()
+  ;
+
+}
+//  Parks Data ................
+
+function Parks(parkData) {
+  this.name = parkData.fullname;
+  this.address = parkData.addresses[0].city, parkData.addresses[0].line1, parkData.addresses[0].line2;
+  this.fee = parkData.entranceFees[0].cost;
+  this.description = parkData.description;
+}
+
+function parkHandler(req, res) {
+  let cityName = req.query.q;
+
+  let key = process.env.PARKS_API_KEY;
+
+
+
+  let parkURL = `https://developer.nps.gov/api/v1/parks?q=${cityName}&api_key=${key}`;
+
+  superagent.get(parkURL) //send a request locatioIQ API
+    .then((parksData) => {
+      let pData = parksData.body;
+
+      let parksArr = pData.data.map((item) => new Parks(item));
+
+
+      res.status(200).send(parksArr);
+
+    })
+
+    .catch(error => {
+      console.log(error);
+      res.send(error);
+    });
+}
+
+
+
 //  general pages ................
 
 function generalHandler(req, res) {
