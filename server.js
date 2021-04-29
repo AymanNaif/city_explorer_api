@@ -28,7 +28,6 @@ server.use(cors());
 server.get('/location', locationHandelr);
 
 
-server.get('*', generalHandler);
 
 //  Location Data ................
 function locationHandelr(req, res) {
@@ -94,16 +93,14 @@ function weatherHandler(req, res) {
       let weatherArr = gData.data.map((item) => new Weather(item));
 
 
-      res.status(200).send(weatherArr.slice(0,8));
+      res.status(200).send(weatherArr.slice(0, 8));
 
+    })
 
-function Weather(weatherName) {
-  this.forecast = weatherName.weather.description;
-  this.time = new Date (weatherName.valid_date).toDateString()
-  ;
 
 }
 //  Parks Data ................
+server.get('/parks', parkHandler);
 
 function Parks(parkData) {
   this.name = parkData.fullname;
@@ -141,6 +138,7 @@ function parkHandler(req, res) {
 
 
 //  general pages ................
+server.get('*', generalHandler);
 
 function generalHandler(req, res) {
   let errorPage = {
@@ -157,3 +155,44 @@ client.connect()
     });
 
   });
+
+// movies Data
+
+
+server.get('/movies', moviesHandler);
+
+function Movies(moviesData) {
+  this.original_title = moviesData.result[0].title;
+  this.overview = moviesData.result[0].overview
+  this.average_votes = moviesData.result[0].vote_average;
+  this.total_votes = moviesData.result[0].vote_count;
+  this.image_url = moviesData.result[0].backdrop_path;
+  this.popularity = moviesData[0].popularity;
+  this.released_on = moviesData[0].released_on;
+}
+
+function moviesHandler(req, res) {
+  let movieName = req.query.append_to_response;
+
+  let key = process.env.MOVIE_API_KEY;
+
+
+
+  let moviesURL = `https://api.themoviedb.org/3/search/movie?api_key=${key}&query=${movieName}`;
+
+  superagent.get(moviesURL) //send a request locatioIQ API
+    .then((moviesData) => {
+      let mData = moviesData.body;
+
+      let moviesArr = mData.data.map((item) => new Movies(item));
+
+
+      res.status(200).send(moviesArr);
+
+    })
+
+    .catch(error => {
+      console.log(error);
+      res.send(error);
+    });
+}
