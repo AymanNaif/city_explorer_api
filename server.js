@@ -10,6 +10,7 @@ const pg = require('pg');
 
 let client;
 let DATABASE_URL = process.env.DATABASE_URL;
+
 let ENV =  process.env.ENV||'';
 if (ENV === 'DEV') {
   client = new pg.Client({
@@ -135,7 +136,82 @@ function parkHandler(req, res) {
     });
 }
 
+// movies Data
 
+
+server.get('/movies', moviesHandler);
+
+function Movies(moviesData) {
+  this.title = moviesData.title;
+  this.overview = moviesData.overview
+  this.average_votes = moviesData.vote_average;
+  this.total_votes = moviesData.vote_count;
+  this.image_url = moviesData.backdrop_path;
+  this.popularity = moviesData.popularity;
+  this.released_on = moviesData.released_on;
+}
+
+function moviesHandler(req, res) {
+  let movieName =  req.query.query;
+
+  let key = process.env.MOVIE_API_KEY;
+
+
+
+  let moviesURL = `https://api.themoviedb.org/3/search/movie?api_key=${key}&query=${movieName}`;
+
+  superagent.get(moviesURL) //send a request Movies API
+    .then((movieData) => {
+      let mData = movieData.body;
+      let moviesArr = mData.results.map((item) => new Movies(item));
+
+
+      res.status(200).send(moviesArr);
+
+    })
+
+    .catch(error => {
+      console.log(error);
+      res.send(error);
+    });
+}
+
+
+// Yelp server
+
+
+server.get('/yelp', yelpDataHandler);
+
+function Yelp(YELPData) {
+  this.name = YELPData.name;
+  this.image_url = YELPData.image_url;
+  this.price = YELPData.price;
+  this.rating = YELPData.rating;
+  this.url = YELPData.url;
+}
+function yelpDataHandler(req, res) {
+  let yelpName = req.query.location;
+  let key = process.env.YELP_API_KEY;
+  let pageNumber = req.query.page;
+  let limit = 5;
+  let offset = (pageNumber - 1) * limit + 1;
+  let url = `https://api.yelp.com/v3/businesses/search?location=${yelpName}&limit=${limit}&offset=${offset}`;
+  superagent
+    .get(url)
+    .set('Authorization', `Bearer ${key}`)
+    .then((ylpData) => {
+      let yData = ylpData.body;
+      let yelpArr = yData.businesses.map((item) => new Yelp(item));
+
+
+      res.status(200).send(yelpArr);
+
+    })
+    .catch(error => {
+      console.log(error);
+      res.send(error);
+    });
+}
 
 //  general pages ................
 server.get('*', generalHandler);
@@ -148,51 +224,12 @@ function generalHandler(req, res) {
   res.status(500).send(errorPage);
 }
 
-client.connect()
-  .then(() => {
-    server.listen(PORT, () => {
-      console.log(`listening on port ${PORT}`);
-    });
 
-  });
-
-// movies Data
+server.listen(PORT, () => {
+  console.log(`listening on port ${PORT}`);
+});
+// client.connect()
+//   .then(() => {
 
 
-server.get('/movies', moviesHandler);
-
-function Movies(moviesData) {
-  this.original_title = moviesData.result[0].title;
-  this.overview = moviesData.result[0].overview
-  this.average_votes = moviesData.result[0].vote_average;
-  this.total_votes = moviesData.result[0].vote_count;
-  this.image_url = moviesData.result[0].backdrop_path;
-  this.popularity = moviesData[0].popularity;
-  this.released_on = moviesData[0].released_on;
-}
-
-function moviesHandler(req, res) {
-  let movieName = req.query.append_to_response;
-
-  let key = process.env.MOVIE_API_KEY;
-
-
-
-  let moviesURL = `https://api.themoviedb.org/3/search/movie?api_key=${key}&query=${movieName}`;
-
-  superagent.get(moviesURL) //send a request locatioIQ API
-    .then((moviesData) => {
-      let mData = moviesData.body;
-
-      let moviesArr = mData.data.map((item) => new Movies(item));
-
-
-      res.status(200).send(moviesArr);
-
-    })
-
-    .catch(error => {
-      console.log(error);
-      res.send(error);
-    });
-}
+//   });
